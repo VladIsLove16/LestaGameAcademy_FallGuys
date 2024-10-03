@@ -1,78 +1,44 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class ThirdPersonCam : MonoBehaviour
+public class ThirdPersonCamera : MonoBehaviour
 {
-    [Header("References")]
-    public Transform orientation;
-    public Transform player;
-    public Transform playerObj;
-    public Rigidbody rb;
+    public Transform target;  // Цель, за которой следует камера (например, игрок)
+    public float distance = 5.0f;  // Расстояние камеры от игрока
+    public float mouseSensitivity = 2.0f;  // Чувствительность мыши
+    public float verticalMin = -40f;  // Минимальный угол по вертикали
+    public float verticalMax = 80f;   // Максимальный угол по вертикали
 
-    public float rotationSpeed;
+    private float rotationX = 0.0f;  // Угол вращения по X (вокруг вертикальной оси)
+    private float rotationY = 0.0f;  // Угол вращения по Y (вокруг горизонтальной оси)
 
-    public Transform combatLookAt;
-
-    public GameObject thirdPersonCam;
-    public GameObject combatCam;
-    public GameObject topDownCam;
-
-    public CameraStyle currentStyle;
-    public enum CameraStyle
+    void Start()
     {
-        Basic,
-        Combat,
-        Topdown
-    }
+        // Начальная настройка угла вращения
+        Vector3 angles = transform.eulerAngles;
+        rotationX = angles.y;
+        rotationY = angles.x;
 
-    private void Start()
-    {
+        // Скрываем курсор
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
-    private void Update()
+    void LateUpdate()
     {
-        // switch styles
-        if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchCameraStyle(CameraStyle.Basic);
-        if (Input.GetKeyDown(KeyCode.Alpha2)) SwitchCameraStyle(CameraStyle.Combat);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SwitchCameraStyle(CameraStyle.Topdown);
+        // Получаем ввод с мыши
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
 
-        // rotate orientation
-        Vector3 viewDir = player.position - new Vector3(transform.position.x, player.position.y, transform.position.z);
-        orientation.forward = viewDir.normalized;
+        // Изменяем углы вращения
+        rotationX += mouseX;
+        rotationY -= mouseY;
 
-        // roate player object
-        if(currentStyle == CameraStyle.Basic || currentStyle == CameraStyle.Topdown)
-        {
-            float horizontalInput = Input.GetAxis("Horizontal");
-            float verticalInput = Input.GetAxis("Vertical");
-            Vector3 inputDir = orientation.forward * verticalInput + orientation.right * horizontalInput;
+        // Ограничиваем вертикальный угол вращения
+        rotationY = Mathf.Clamp(rotationY, verticalMin, verticalMax);
 
-            if (inputDir != Vector3.zero)
-                playerObj.forward = Vector3.Slerp(playerObj.forward, inputDir.normalized, Time.deltaTime * rotationSpeed);
-        }
-
-        else if(currentStyle == CameraStyle.Combat)
-        {
-            Vector3 dirToCombatLookAt = combatLookAt.position - new Vector3(transform.position.x, combatLookAt.position.y, transform.position.z);
-            orientation.forward = dirToCombatLookAt.normalized;
-
-            playerObj.forward = dirToCombatLookAt.normalized;
-        }
-    }
-
-    private void SwitchCameraStyle(CameraStyle newStyle)
-    {
-        combatCam.SetActive(false);
-        thirdPersonCam.SetActive(false);
-        topDownCam.SetActive(false);
-
-        if (newStyle == CameraStyle.Basic) thirdPersonCam.SetActive(true);
-        if (newStyle == CameraStyle.Combat) combatCam.SetActive(true);
-        if (newStyle == CameraStyle.Topdown) topDownCam.SetActive(true);
-
-        currentStyle = newStyle;
+        // Определяем направление камеры
+        Quaternion rotation = Quaternion.Euler(rotationY, rotationX, 0);
+        transform.position = target.position - (rotation * Vector3.forward * distance);
+        transform.LookAt(target);
     }
 }
