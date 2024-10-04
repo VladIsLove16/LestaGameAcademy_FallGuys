@@ -19,10 +19,19 @@ public class ThirdPersonCamera : MonoBehaviour
         rotationY = angles.x;
 
         // Скрываем курсор
+        LockCursor();
+    }
+
+    public void LockCursor()
+    {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
-
+    public void UnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.visible = true;
+    }
     void LateUpdate()
     {
         // Получаем ввод с мыши

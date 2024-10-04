@@ -1,3 +1,4 @@
+using Cinemachine.Utility;
 using System;
 using System.Collections;
 using System.Diagnostics.Contracts;
@@ -6,7 +7,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-public class CharacterController : MonoBehaviour
+public class CharacterController : MonoBehaviour, IWindForceable
 {
     private PlayerActions—S playerActions;
     [SerializeField]
