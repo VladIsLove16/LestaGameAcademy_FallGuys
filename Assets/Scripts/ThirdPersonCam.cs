@@ -10,7 +10,7 @@ public class ThirdPersonCamera : MonoBehaviour
 
     private float rotationX = 0.0f;  // Угол вращения по X (вокруг вертикальной оси)
     private float rotationY = 0.0f;  // Угол вращения по Y (вокруг горизонтальной оси)
-
+    private bool isActive = true;
     void Start()
     {
         // Начальная настройка угла вращения
@@ -20,8 +20,16 @@ public class ThirdPersonCamera : MonoBehaviour
 
         // Скрываем курсор
         LockCursor();
+        UnLockCamera();
     }
-
+    public void LockCamera()
+    {
+        isActive = false;
+    }
+    public void UnLockCamera()
+    {
+        isActive = true;
+    }
     public void LockCursor()
     {
         Cursor.lockState = CursorLockMode.Locked;
@@ -34,6 +42,8 @@ public class ThirdPersonCamera : MonoBehaviour
     }
     void LateUpdate()
     {
+        if(!isActive)
+            return;
         // Получаем ввод с мыши
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;

@@ -87,7 +87,7 @@ public class ExplodeTrap : MonoBehaviour
     {
         foreach (IDamageable obj in objectsInContact)
         {
-            obj.GetDamage(damage);
+            obj.GetDamage(damage, DieReason.explode);
         }
         audioSource.PlayOneShot(ExplodingSound);
         SetState(State.exploding);

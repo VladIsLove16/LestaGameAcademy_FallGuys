@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class WindTrap : MonoBehaviour
@@ -21,6 +23,8 @@ public class WindTrap : MonoBehaviour
     protected Vector2 direction;
     [SerializeField]
     Transform Visual;
+
+    private Dictionary<IWindForceable, float> reloadings;
     private void Update()
     {
         currentDirectionChangeTime -= Time.deltaTime;
@@ -31,12 +35,18 @@ public class WindTrap : MonoBehaviour
     protected virtual void OnTriggerStay(Collider other)
     {
         IWindForceable windForceable = other.gameObject.GetComponent<IWindForceable>();
-        Debug.Log(other.gameObject.name);
+        //Debug.Log(other.gameObject.name);
         if (windForceable !=null)
         {
             Debug.Log("Add force");
-            other.attachedRigidbody.AddForce(direction.x*force, 0, direction.y*force,ForceMode.VelocityChange);
+            AddForce(other.attachedRigidbody);
+            //AddToAttractiveList(windForceable);
         }
+    }
+
+    private void AddForce(Rigidbody windForceable)
+    {
+        windForceable.AddForce(direction.x * force, 0, direction.y * force, ForceMode.VelocityChange);
     }
     private Vector2 GetRandomDirection()
     {
@@ -57,7 +67,7 @@ public class WindTrap : MonoBehaviour
     {
         float angle = -Vector2.SignedAngle(Vector2.up, direction);   
         //float angle180 = Vector2.SignedAngle(Vector2.right, Vector2.down);
-        Debug.Log(direction+ " " + angle);
+        //Debug.Log(direction+ " " + angle);
         if(Visual)
             Visual.rotation = Quaternion.Euler(0f, angle, 0f);
     }

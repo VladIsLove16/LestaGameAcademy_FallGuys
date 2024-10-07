@@ -12,8 +12,8 @@ public class GameController  : MonoBehaviour
     StartLine StartLine;
     [SerializeField]
     FinishLine FinishLine;
-    [SerializeField]
-    ThirdPersonCamera ThirdPersonCamera;
+    //[SerializeField]
+    //ThirdPersonCamera ThirdPersonCamera;
     private void Awake()
     {
         FinishLine.FinishLineReached += ()=>FinishGame(true);
@@ -21,30 +21,29 @@ public class GameController  : MonoBehaviour
     }
     private void Update()
     {
-        PlayerFallCheck();
+        //PlayerFallCheck();
     }
     private void PlayerFallCheck()
     {
-        if (playerHealthController.transform.position.y < -10f)
-        {
-            playerHealthController.Die();
-        }
+        //if (playerHealthController.transform.position.y < -10f)
+        //{
+        //    playerHealthController.Die(DieReason.falling);
+        //}
     }
     private void TeleportPlayerToSpawn()
     {
-        playerHealthController.transform.position = spawnPoint.position;
+        playerHealthController.gameObject.transform.position = spawnPoint.position;
+        Debug.Log("Playe teleport to spawn/ new cord" + playerHealthController.transform.position);
+
     }
     public void RevivePlayer()
     {
         TeleportPlayerToSpawn();
         playerHealthController.Revive();
-        ThirdPersonCamera.LockCursor();
     }
     public void FinishGame(bool result )
     {
-        Debug.Log("ThirdPersonCamera.UnlockCursor();");
-        ThirdPersonCamera.UnlockCursor();
-        GameFinished?.Invoke(result);
+        //GameFinished?.Invoke(result);
     }
 }
 public static class GamePause

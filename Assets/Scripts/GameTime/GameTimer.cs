@@ -22,7 +22,8 @@ public class GameTimer : MonoBehaviour
         if (isPlaying)
         {
             currentTime += Time.deltaTime;
-            TextMeshProUGUI.text = currentTime.ToString().Substring(0,4);
+
+            TextMeshProUGUI.text = Mathf.Round(currentTime).ToString();
         }
     }
     public void StartTimer()

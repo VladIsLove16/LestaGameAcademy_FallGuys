@@ -1,6 +1,7 @@
 using Cinemachine.Utility;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -15,12 +16,14 @@ public class CharacterController : MonoBehaviour, IWindForceable
     [SerializeField]
     private float Acceleration;
     [SerializeField]
-    private float JumpForce;
-    [SerializeField] // Точка для проверки земли
-    private float groundDistance = 0.4f;
+    private float FlyingAcceleration;
     [SerializeField]
-    private Transform groundCheck;
-    [SerializeField] // Радиус проверки земли
+    private float JumpForce;
+    [SerializeField] 
+    private float groundCheckDist;
+    [SerializeField]
+    //private Transform groundCheck;
+    //[SerializeField] // Радиус проверки земли
     private LayerMask groundMask;  // Маска для земли
     [SerializeField]
     private float Turnspeed = 0.1f;
@@ -28,24 +31,76 @@ public class CharacterController : MonoBehaviour, IWindForceable
     private float TurnTime = 0.1f;
 
     private bool isGrounded;
+    private bool isJumping= false;
     Rigidbody rb;
 
     [SerializeField]
     private Transform cameraTransform; // Ссылка на камеру
+    private PlayerHealthController PlayerHealthController;
+    [SerializeField]
+    ThirdPersonCamera ThirdPersonCamera;
+    Vector2 moveVector;
 
     private void Awake()
     {
         SetupRB();
         SetupPlayerActions();
+        PlayerHealthController = GetComponent<PlayerHealthController>();
+        PlayerHealthController.PlayerDied += OnPlayer_Died;
+        PlayerHealthController.PlayerRevive +=()=> StartCoroutine( OnPlayer_Revive());
+        
     }
 
     void Update()
     {
-        Move(); 
+        moveVector = playerActions.Player.Move.ReadValue<Vector2>();
+    }
+    private void FixedUpdate()
+    {
+        Move();
+        Jump();
         Rotate();
         GroundCheck();
         ResetVerticalVelocityOnLanding();
-        
+    }
+    private void Move()
+    {
+        Vector3 moveDirection = CameraRelativeMovement(moveVector);
+        float force = isGrounded ? Acceleration : FlyingAcceleration;
+        rb.AddForce(moveDirection * force * Time.deltaTime, ForceMode.VelocityChange);
+    }
+
+    private void OnPlayer_Died()
+    {
+        rb.isKinematic = true;
+        HideMesh();
+        ThirdPersonCamera.UnlockCursor();
+        ThirdPersonCamera.LockCamera();
+    }
+
+    private void HideMesh()
+    {
+        foreach (MeshRenderer child in transform.GetComponentsInChildren<MeshRenderer>())
+        {
+            child.enabled = false;
+        }
+    }
+
+    private IEnumerator  OnPlayer_Revive()
+    {
+        yield return new WaitForSeconds(0.1f);
+        rb.isKinematic = false;
+        ShowMesh();
+        ThirdPersonCamera.LockCursor();
+        ThirdPersonCamera.UnLockCamera();
+    }
+
+    private void ShowMesh()
+    {
+        foreach (MeshRenderer child in transform.GetComponentsInChildren<MeshRenderer>())
+        {
+            child.enabled = true;
+        }
     }
 
     private void Rotate()
@@ -83,18 +138,7 @@ public class CharacterController : MonoBehaviour, IWindForceable
     }
 
 
-    private void Move()
-    {
-        // Получаем направление движения от игрока (ось X и Y — движение на плоскости)
-        Vector2 moveVector = playerActions.Player.Move.ReadValue<Vector2>();
-
-        // Преобразуем направление движения относительно камеры
-        Vector3 moveDirection = CameraRelativeMovement(moveVector);
-
-        // Применяем силу для перемещения персонажа
-        rb.AddForce(moveDirection * Acceleration * Time.deltaTime, ForceMode.VelocityChange);
-    }
-
+    
     private Vector3 CameraRelativeMovement(Vector2 moveVector)
     {
         // Получаем forward и right направления камеры
@@ -119,24 +163,44 @@ public class CharacterController : MonoBehaviour, IWindForceable
     {
         playerActions = new PlayerActionsСS();
         playerActions.Enable();
-        playerActions.Player.Jump.performed += (callback) => Jump();
+        playerActions.Player.Jump.performed += OnJumpPerformed;
+        playerActions.Player.Jump.canceled += OnJumpCanceled;
+    }
+
+    private void OnJumpCanceled(InputAction.CallbackContext context)
+    {
+        isJumping = false;
+    }
+
+    private void OnJumpPerformed(InputAction.CallbackContext context)
+    {
+        isJumping = true;
     }
 
     private void SetupRB()
     {
         rb = GetComponent<Rigidbody>();
-        rb.maxAngularVelocity = MaxMoveSpeed;
+        rb.maxLinearVelocity = MaxMoveSpeed;
     }
 
     private void GroundCheck()
     {
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+        //isGrounded = Physics.CheckSphere(groundCheck.position, transform.localScale.x, groundMask);
+        isGrounded = Physics.Raycast(transform.position, -Vector3.up, groundCheckDist+transform.localScale.y, groundMask);
     }
 
     private void Jump()
     {
-        if (isGrounded)
-            rb.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
+        Debug.Log("jump");
+        if (isJumping)
+        {
+            if (isGrounded)
+            {
+                //isJumping = false;
+                rb.AddForce(Vector3.up * JumpForce, ForceMode.Impulse);
+
+            }
+        }
     }
 
     private void ResetVerticalVelocityOnLanding()
